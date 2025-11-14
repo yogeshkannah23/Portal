@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
-export default function FilterSidebar({ isOpen, setIsOpen }) {
+export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setFilterApplied}) {
 
   // Filter data states
   const [regions, setRegions] = useState([]);
@@ -83,6 +83,7 @@ export default function FilterSidebar({ isOpen, setIsOpen }) {
 
   // Send filters to backend
   const handleApplyFilters = () => {
+    setFilterApplied(!isFilterApplied)
     fetch("/api/filter-parcels", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -99,9 +100,10 @@ export default function FilterSidebar({ isOpen, setIsOpen }) {
     <>
 
     <div
-  className={`absolute top-0 left-16 h-full bg-white shadow-lg border-r z-[9999]
-  w-64 sm:w-72 md:w-80 lg:w-96 `}
->
+      className={`absolute top-0 left-16 h-full bg-white shadow-lg border-r z-[9999]
+      w-64 sm:w-72 md:w-80 lg:w-96 transition-transform duration-300 ease-in-out
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+    >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b bg-gray-50">
           <h2 className="text-lg font-semibold text-gray-700">
@@ -159,10 +161,6 @@ export default function FilterSidebar({ isOpen, setIsOpen }) {
             onChange={handleChange}
             options={parcels}
           />
-        </div>
-
-        {/* Apply button */}
-        <div className="p-4 border-t bg-gray-50">
           <button
             onClick={handleApplyFilters}
             className="w-full bg-[#001147] text-white py-2 rounded-lg hover:bg-[#001147]/90"
@@ -170,17 +168,8 @@ export default function FilterSidebar({ isOpen, setIsOpen }) {
             Apply Filters
           </button>
         </div>
-      </div>
 
-      {/* Collapsed toggle button */}
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-white border shadow-lg p-2 rounded-r-lg hover:bg-gray-50 z-[9999]"
-        >
-          <ChevronRight className="w-5 h-5 text-gray-700" />
-        </button>
-      )}
+      </div>
     </>
   );
 }
@@ -188,7 +177,7 @@ export default function FilterSidebar({ isOpen, setIsOpen }) {
 /* Helper component */
 function SelectField({ label, name, value, onChange, options }) {
   return (
-    <div>
+    <div className="animate-fadeIn">
       <label className="block text-sm font-medium text-gray-600 mb-1">
         {label}
       </label>
@@ -196,7 +185,7 @@ function SelectField({ label, name, value, onChange, options }) {
         name={name}
         value={value}
         onChange={onChange}
-        className="w-full border rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+        className="w-full border rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all duration-200 hover:border-gray-400"
       >
         <option value="">Select {label}</option>
         {options?.map((opt, idx) => (

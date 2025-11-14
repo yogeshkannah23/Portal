@@ -9,6 +9,7 @@ import ReportTable from './components/ReportTable'
 function App() {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isFilterApplied, setFilterApplied] = useState(false);
+  const [reportData, setReportData] = useState([])
 
   return (
     <div className="flex flex-col h-screen">
@@ -21,6 +22,7 @@ function App() {
         setIsOpen={setIsFilterOpen} 
         isFilterApplied={isFilterApplied} 
         setFilterApplied={setFilterApplied}
+        setReportData={setReportData}
         />
 
 
@@ -28,6 +30,7 @@ function App() {
         <ReportTable 
         isOpen={isFilterOpen} 
         isFilterApplied={isFilterApplied} 
+        reportData={reportData}
         />}
 
         <LeftSidebar 

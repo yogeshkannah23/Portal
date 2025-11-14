@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft } from "lucide-react";
 
 
-export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setFilterApplied}) {
+export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setFilterApplied, setReportData}) {
 
   // Filter data states
   const [regions, setRegions] = useState([]);
@@ -199,18 +199,31 @@ export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setF
   };
 
   // Send filters to backend
-  const handleApplyFilters = () => {
-    setFilterApplied(!isFilterApplied)
-    fetch("/api/filter-parcels", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(filters),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Filtered data:", data);
-        // You can send this to parent component (MapView) later
+  const handleApplyFilters = async () => {
+    try {
+      setFilterApplied((prev) => !prev);
+  
+      const res = await fetch(`${ENDPOINT_URL}method/strategy_custom_app.strategy_custom_app.api.portal_api.get_cadastral_parcels`, {
+        method: "POST",
+        headers: {
+            "Authorization": `token ${API_KEY}:${SECRET_KEY}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({'filters':filters})
       });
+  
+      const text = await res.text();   // Read raw text
+      const data = JSON.parse(text);   // Parse manually (same as your pattern)
+  
+      console.log("Filtered data:", data);
+      setReportData(data.message)
+  
+      // TODO: send this data to MapView or parent later
+      // setFilteredParcels(data.message || data);
+  
+    } catch (err) {
+      console.error("Error applying filters:", err);
+    }
   };
 
   return (

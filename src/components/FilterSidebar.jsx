@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft } from "lucide-react";
 
+import.meta.env.VITE_API_KEY
+import.meta.env.VITE_SECRET_KEY
+
 export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setFilterApplied}) {
 
   // Filter data states
@@ -10,7 +13,10 @@ export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setF
   const [lots, setLots] = useState([]);
   const [ilots, setIlots] = useState([]);
   const [parcels, setParcels] = useState([]);
-  
+
+  const ENDPOINT_URL = import.meta.env.VITE_ENDPOINT_URL;
+  const API_KEY = import.meta.env.VITE_API_KEY;
+  const SECRET_KEY = import.meta.env.VITE_SECRET_KEY;
 
   // Selected values
   const [filters, setFilters] = useState({
@@ -24,10 +30,26 @@ export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setF
 
   // Fetch regions on load
   useEffect(() => {
-    fetch("/api/regions") 
-      .then((res) => res.json())
-      .then((data) => setRegions(data))
-      .catch((err) => console.error("Error fetching regions:", err));
+    const fetchRegions = async () => {
+      try {
+        const res = await fetch(`${ENDPOINT_URL}strategy_custom_app.strategy_custom_app.api.portal_api.get_regions`, {
+          headers: {
+            "Authorization": `token ${API_KEY}:${SECRET_KEY}`,
+            "Content-Type": "application/json"
+          }
+        });
+  
+        const text = await res.text();
+        const data = JSON.parse(text);
+
+        setRegions(data.message.data);
+
+      } catch (err) {
+        console.error("Error fetching regions:", err);
+      }
+    };
+  
+    fetchRegions();
   }, []);
 
   // Fetch communes when region changes
@@ -141,14 +163,14 @@ export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setF
             options={sections}
           />
           <SelectField
-            label="Lot"
+            label="LOTS"
             name="lot"
             value={filters.lot}
             onChange={handleChange}
             options={lots}
           />
           <SelectField
-            label="Ilot"
+            label="ILOTS"
             name="ilot"
             value={filters.ilot}
             onChange={handleChange}
@@ -157,6 +179,13 @@ export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setF
           <SelectField
             label="Cadastral Parcel"
             name="parcel"
+            value={filters.parcel}
+            onChange={handleChange}
+            options={parcels}
+          />
+          <SelectField
+            label="Cadastral Parcel Number"
+            name="parcel_number"
             value={filters.parcel}
             onChange={handleChange}
             options={parcels}
@@ -188,11 +217,17 @@ function SelectField({ label, name, value, onChange, options }) {
         className="w-full border rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all duration-200 hover:border-gray-400"
       >
         <option value="">Select {label}</option>
-        {options?.map((opt, idx) => (
-          <option key={idx} value={opt.value || opt.name || opt.id}>
-            {opt.label || opt.name}
-          </option>
-        ))}
+        {options?.map((opt, idx) => {
+          // Handle both string and object formats
+          const optionValue = typeof opt === 'string' ? opt : (opt.value || opt.name || opt.id || opt);
+          const optionLabel = typeof opt === 'string' ? opt : (opt.label || opt.name || opt.value || opt);
+
+          return (
+            <option key={idx} value={optionValue}>
+              {optionLabel}
+            </option>
+          );
+        })}
       </select>
     </div>
   );

@@ -1,22 +1,26 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft } from "lucide-react";
 
+
 export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setFilterApplied}) {
 
   // Filter data states
   const [regions, setRegions] = useState([]);
-  const [communes, setCommunes] = useState([]);
+  const [municipalities, setMunicipalities] = useState([]);
   const [sections, setSections] = useState([]);
   const [lots, setLots] = useState([]);
   const [ilots, setIlots] = useState([]);
   const [parcels, setParcels] = useState([]);
-  
+
+  const ENDPOINT_URL = import.meta.env.VITE_ENDPOINT_URL;
+  const API_KEY = import.meta.env.VITE_API_KEY;
+  const SECRET_KEY = import.meta.env.VITE_SECRET_KEY;
 
   // Selected values
   const [filters, setFilters] = useState({
     region: "",
-    commune: "",
-    section: "",
+    municipalities: "",
+    sections: "",
     lot: "",
     ilot: "",
     parcel: "",
@@ -24,56 +28,169 @@ export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setF
 
   // Fetch regions on load
   useEffect(() => {
-    fetch("/api/regions") 
-      .then((res) => res.json())
-      .then((data) => setRegions(data))
-      .catch((err) => console.error("Error fetching regions:", err));
+    const fetchRegions = async () => {
+      try {
+        const res = await fetch(`${ENDPOINT_URL}resource/Region`, {
+          headers: {
+            "Authorization": `token ${API_KEY}:${SECRET_KEY}`,
+            "Content-Type": "application/json"
+          }
+        });
+  
+        const text = await res.text();
+        const response = JSON.parse(text);
+
+        setRegions(response.data.map(r => r.name));
+
+      } catch (err) {
+        console.error("Error fetching regions:", err);
+      }
+    };
+  
+    fetchRegions();
   }, []);
 
-  // Fetch communes when region changes
+  // Fetch Municipalities when region changes
   useEffect(() => {
-    if (!filters.region) return;
-    fetch(`/api/communes?region=${filters.region}`)
-      .then((res) => res.json())
-      .then((data) => setCommunes(data))
-      .catch((err) => console.error("Error fetching communes:", err));
+    const fetchMunicipalities = async () => {
+      try {
+        const res = await fetch(`${ENDPOINT_URL}resource/Municipality?filters=[["region","=","${filters.region}"]]&limit_page_length=0
+`, {
+          headers: {
+            "Authorization": `token ${API_KEY}:${SECRET_KEY}`,
+            "Content-Type": "application/json"
+          }
+        });
+  
+        const text = await res.text();
+        const response = JSON.parse(text);
+
+        setMunicipalities(response.data.map(r => r.name));
+
+      } catch (err) {
+        console.error("Error fetching regions:", err);
+      }
+    };
+  
+    fetchMunicipalities();
   }, [filters.region]);
 
-  // Fetch sections when commune changes
+  // Fetch sections when municipality changes
   useEffect(() => {
-    if (!filters.commune) return;
-    fetch(`/api/sections?commune=${filters.commune}`)
-      .then((res) => res.json())
-      .then((data) => setSections(data))
-      .catch((err) => console.error("Error fetching sections:", err));
-  }, [filters.commune]);
+    const fetchSections = async () => {
+      try {
+        const res = await fetch(`${ENDPOINT_URL}method/strategy_custom_app.strategy_custom_app.api.portal_api.get_sections_by_region`, {
+          method: "POST", 
+          headers: {
+            "Authorization": `token ${API_KEY}:${SECRET_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            region: filters.region,
+            municipality: filters.municipalities
+          })
+        });
+  
+        const text = await res.text();
+        const response = JSON.parse(text);
+
+        setSections(response.message.data);
+
+      } catch (err) {
+        console.error("Error fetching regions:", err);
+      }
+    };
+  
+    fetchSections();
+  }, [filters.municipalities]);
 
   // Fetch lots when section changes
   useEffect(() => {
-    if (!filters.section) return;
-    fetch(`/api/lots?section=${filters.section}`)
-      .then((res) => res.json())
-      .then((data) => setLots(data))
-      .catch((err) => console.error("Error fetching lots:", err));
-  }, [filters.section]);
+    const fetchLots = async () => {
+      try {
+        if (!filters.sections) return 
+        const res = await fetch(`${ENDPOINT_URL}method/strategy_custom_app.strategy_custom_app.api.portal_api.get_lots_by_region`, {
+          method:"POST",
+          headers: {
+            "Authorization": `token ${API_KEY}:${SECRET_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            region: filters.region,
+            municipality: filters.municipalities,
+            sections: filters.sections
+          })
+        });
+  
+        const text = await res.text();
+        const response = JSON.parse(text);
+
+        setLots(response.message.data);
+
+      } catch (err) {
+        console.error("Error fetching regions:", err);
+      }
+    };
+  
+    fetchLots();
+  }, [filters.sections]);
 
   // Fetch ilots when lot changes
   useEffect(() => {
-    if (!filters.lot) return;
-    fetch(`/api/ilots?lot=${filters.lot}`)
-      .then((res) => res.json())
-      .then((data) => setIlots(data))
-      .catch((err) => console.error("Error fetching ilots:", err));
+    const fetchIlots = async () => {
+      try {
+        if (!filters.sections) return 
+        const res = await fetch(`${ENDPOINT_URL}method/strategy_custom_app.strategy_custom_app.api.portal_api.get_ilots_by_region`, {
+          method:"POST",
+          headers: {
+            "Authorization": `token ${API_KEY}:${SECRET_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            region: filters.region,
+            municipality: filters.municipalities,
+            sections: filters.sections,
+            lots:filters.lot
+          })
+        });
+  
+        const text = await res.text();
+        const response = JSON.parse(text);
+
+        setIlots(response.message.data);
+
+      } catch (err) {
+        console.error("Error fetching regions:", err);
+      }
+    };
+  
+    fetchIlots();
   }, [filters.lot]);
 
   // Fetch parcels when ilot changes
   useEffect(() => {
-    if (!filters.ilot) return;
-    fetch(`/api/parcels?ilot=${filters.ilot}`)
-      .then((res) => res.json())
-      .then((data) => setParcels(data))
-      .catch((err) => console.error("Error fetching parcels:", err));
-  }, [filters.ilot]);
+    const fetchCadastralParcel = async () => {
+      try {
+        if (!filters.lot || !filters.ilot) return 
+        const res = await fetch(`${ENDPOINT_URL}resource/Cadastral Parcel?fields=["name"]&filters=[["region","=","${filters.region}"],["municipality","=","${filters.municipalities}"],["section","=","${filters.sections}"],["lots","=","${filters.lot}"],["ilots","=","${filters.ilot}"]]`, {
+          headers: {
+            "Authorization": `token ${API_KEY}:${SECRET_KEY}`,
+            "Content-Type": "application/json"
+          }
+        });
+  
+        const text = await res.text();
+        const response = JSON.parse(text);
+
+        setParcels(response.data.map(r => r.name));
+
+      } catch (err) {
+        console.error("Error fetching regions:", err);
+      }
+    };
+  
+    fetchCadastralParcel();
+  }, [filters.ilot, filters.lot]);
 
   // Handle change
   const handleChange = (e) => {
@@ -127,28 +244,28 @@ export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setF
             options={regions}
           />
           <SelectField
-            label="Commune"
-            name="commune"
-            value={filters.commune}
+            label="Municipalities"
+            name="municipalities"
+            value={filters.municipalities}
             onChange={handleChange}
-            options={communes}
+            options={municipalities}
           />
           <SelectField
-            label="Section"
-            name="section"
-            value={filters.section}
+            label="Sections"
+            name="sections"
+            value={filters.sections}
             onChange={handleChange}
             options={sections}
           />
           <SelectField
-            label="Lot"
+            label="LOTS"
             name="lot"
             value={filters.lot}
             onChange={handleChange}
             options={lots}
           />
           <SelectField
-            label="Ilot"
+            label="ILOTS"
             name="ilot"
             value={filters.ilot}
             onChange={handleChange}
@@ -157,6 +274,13 @@ export default function FilterSidebar({ isOpen, setIsOpen, isFilterApplied, setF
           <SelectField
             label="Cadastral Parcel"
             name="parcel"
+            value={filters.parcel}
+            onChange={handleChange}
+            options={parcels}
+          />
+          <SelectField
+            label="Cadastral Parcel Number"
+            name="parcel_number"
             value={filters.parcel}
             onChange={handleChange}
             options={parcels}
@@ -188,11 +312,17 @@ function SelectField({ label, name, value, onChange, options }) {
         className="w-full border rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all duration-200 hover:border-gray-400"
       >
         <option value="">Select {label}</option>
-        {options?.map((opt, idx) => (
-          <option key={idx} value={opt.value || opt.name || opt.id}>
-            {opt.label || opt.name}
-          </option>
-        ))}
+        {options?.map((opt, idx) => {
+          // Handle both string and object formats
+          const optionValue = typeof opt === 'string' ? opt : (opt.value || opt.name || opt.id || opt);
+          const optionLabel = typeof opt === 'string' ? opt : (opt.label || opt.name || opt.value || opt);
+
+          return (
+            <option key={idx} value={optionValue}>
+              {optionLabel}
+            </option>
+          );
+        })}
       </select>
     </div>
   );
